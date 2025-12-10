@@ -3,18 +3,28 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Recipe to Whole Foods</title>
+    <title>Recipe to shopping list</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛒 Recipe to Whole Foods</h1>
+            <h1>🛒 Recipe to shopping list</h1>
             <p class="subtitle">Add ingredients to your cart instantly</p>
         </div>
 
         <div class="content">
+            <!-- Ingredient Display (always visible) -->
+            <div id="ingredientSection" class="ingredient-section">
+                <div id="recipeTitle" class="recipe-title hidden"></div>
+                <div id="ingredientList" class="ingredient-list"></div>
+                <div id="noRecipe" class="no-recipe hidden">
+                    <p>📄 No recipe found on this page</p>
+                    <p class="hint">Try entering a recipe URL below</p>
+                </div>
+            </div>
+
             <div class="store-selector">
                 <label for="storeSelect">Store:</label>
                 <select id="storeSelect">
@@ -23,7 +33,7 @@
                 </select>
             </div>
 
-            <div class="input-group">
+            <div class="input-group collapsed" id="urlInputGroup">
                 <label for="recipeUrl">Recipe URL:</label>
                 <input type="text" id="recipeUrl" placeholder="https://example.com/recipe" autocomplete="off">
                 <button id="getCurrentUrl" class="secondary-btn" title="Use current page URL">
@@ -32,15 +42,10 @@
             </div>
 
             <button id="addToCart" class="primary-btn">
-                Add to Whole Foods Cart
+                Add to Cart
             </button>
 
             <div id="status" class="status hidden"></div>
-
-            <div id="ingredientPreview" class="ingredient-preview hidden">
-                <h3>Found Ingredients:</h3>
-                <div id="ingredientList"></div>
-            </div>
         </div>
 
         <div class="footer">

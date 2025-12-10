@@ -5,16 +5,10 @@
 
 const AFX_ENDPOINT = 'https://www.amazon.com/afx/ingredients/landing';
 
-// Store configurations
-const STORES = {
-    wholefoods: {
-        name: 'Whole Foods',
-        brandId: 'VUZHIFdob2xlIEZvb2Rz'  // Base64: "UFG Whole Foods"
-    },
-    amazonfresh: {
-        name: 'Amazon Fresh',
-        brandId: 'QW1hem9uIEZyZXNo'  // Base64: "Amazon Fresh" (verified working)
-    }
+// Store brand IDs (store names come from panel.js STORES object)
+const BRAND_IDS = {
+    wholefoods: 'VUZHIFdob2xlIEZvb2Rz',  // Base64: "UFG Whole Foods"
+    amazonfresh: 'QW1hem9uIEZyZXNo'  // Base64: "Amazon Fresh"
 };
 
 /**
@@ -24,9 +18,10 @@ const STORES = {
  * @param {string} recipeTitle - Title of the recipe (optional)
  */
 function submitToAFX(ingredients, storeId = 'wholefoods', recipeTitle = '') {
-    const store = STORES[storeId];
+    const brandId = BRAND_IDS[storeId];
+    const storeName = storeId === 'wholefoods' ? 'Whole Foods' : 'Amazon Fresh';
 
-    if (!store) {
+    if (!brandId) {
         console.error('Invalid store ID:', storeId);
         return;
     }
@@ -54,14 +49,14 @@ function submitToAFX(ingredients, storeId = 'wholefoods', recipeTitle = '') {
     const brandInput = document.createElement('input');
     brandInput.type = 'hidden';
     brandInput.name = 'brand';
-    brandInput.value = store.name;
+    brandInput.value = storeName;
     form.appendChild(brandInput);
 
     // Add brand ID field
     const brandIdInput = document.createElement('input');
     brandIdInput.type = 'hidden';
     brandIdInput.name = 'almBrandId';
-    brandIdInput.value = store.brandId;
+    brandIdInput.value = brandId;
     form.appendChild(brandIdInput);
 
     // Append form to body, submit, and remove
@@ -73,7 +68,7 @@ function submitToAFX(ingredients, storeId = 'wholefoods', recipeTitle = '') {
         document.body.removeChild(form);
     }, 100);
 
-    console.log('Submitted to', store.name, ':', {
+    console.log('Submitted to', storeName, ':', {
         ingredientCount: ingredients.length,
         recipeTitle: recipeTitle,
         storeId: storeId
@@ -82,4 +77,3 @@ function submitToAFX(ingredients, storeId = 'wholefoods', recipeTitle = '') {
 
 // Export for use in popup.js
 window.submitToAFX = submitToAFX;
-window.STORES = STORES;

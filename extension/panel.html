@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Recipe to shopping list</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Recipe to shopping list</h1>
+            <p class="subtitle">Add ingredients to your cart instantly</p>
+        </div>
+
+        <div class="content">
+            <!-- Store and Action at Top -->
+            <div class="top-controls">
+                <!-- Compact Store Card -->
+                <div class="store-card" id="storeCard">
+                    <img id="selectedStoreLogo" src="wholefoods_logo.png" alt="Selected Store">
+                    <div class="store-info">
+                        <span class="store-label">Store</span>
+                        <span class="store-name" id="selectedStoreName">Whole Foods</span>
+                    </div>
+                    <button class="change-btn" id="changeStoreBtn">Change</button>
+                </div>
+
+                <button id="addToCart" class="primary-btn">
+                    Add to Shopping List
+                </button>
+            </div>
+
+            <!-- Store Selection Modal -->
+            <div class="store-modal hidden" id="storeModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Select Store</h3>
+                        <button class="close-btn" id="closeModalBtn">×</button>
+                    </div>
+                    <div class="store-options">
+                        <div class="store-option" data-store="wholefoods">
+                            <img src="wholefoods_logo.png" alt="Whole Foods">
+                            <div class="option-info">
+                                <h4>Whole Foods Market</h4>
+                                <p>Premium organic groceries</p>
+                            </div>
+                            <span class="selected-badge">✓</span>
+                        </div>
+                        <div class="store-option" data-store="amazonfresh">
+                            <img src="amazonfresh_logo.png" alt="Amazon Fresh">
+                            <div class="option-info">
+                                <h4>Amazon Fresh</h4>
+                                <p>Fast grocery delivery</p>
+                            </div>
+                            <span class="selected-badge">✓</span>
+                        </div>
+                        <!-- Future stores can be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ingredient Display (always visible) -->
+            <div id="ingredientSection" class="ingredient-section">
+                <div id="recipeTitle" class="recipe-title hidden"></div>
+                <div id="ingredientList" class="ingredient-list"></div>
+                <div id="noRecipe" class="no-recipe hidden">
+                    <p>📄 No recipe found on this page</p>
+                    <p class="hint">Try entering a recipe URL below</p>
+                </div>
+            </div>
+
+            <div class="input-group collapsed" id="urlInputGroup">
+                <label for="recipeUrl">Recipe URL:</label>
+                <input type="text" id="recipeUrl" placeholder="https://example.com/recipe" autocomplete="off">
+                <button id="getCurrentUrl" class="secondary-btn" title="Use current page URL">
+                    📋 Current Page
+                </button>
+            </div>
+
+            <div id="status" class="status hidden"></div>
+        </div>
+    </div>
+
+    <script src="afx_submitter.js"></script>
+    <script src="panel.js"></script>
+</body>
+
+</html>

@@ -7,14 +7,41 @@ let addToCartBtn;
 let getCurrentUrlBtn;
 let statusDiv;
 let ingredientList;
-let storeSelect;
 let recipeTitle;
 let noRecipe;
 let urlInputGroup;
+let storeModal;
+let changeStoreBtn;
+let closeModalBtn;
+let selectedStoreLogo;
+let selectedStoreName;
+let selectedStore = 'wholefoods'; // Default store
+
+// Store configuration
+const STORES = {
+    wholefoods: {
+        name: 'Whole Foods',
+        logo: 'wholefoods_logo.png'
+    },
+    amazonfresh: {
+        name: 'Amazon Fresh',
+        logo: 'amazonfresh_logo.png'
+    }
+};
 
 // State
 let currentIngredients = null;
 let currentRecipeTitle = '';
+
+// Per-tab recipe cache
+const tabRecipeCache = new Map();
+
+// Listen for tab change messages from background
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'TAB_CHANGED' || message.type === 'TAB_UPDATED') {
+        autoParseCurrentPage();
+    }
+});
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,21 +51,48 @@ document.addEventListener('DOMContentLoaded', () => {
     getCurrentUrlBtn = document.getElementById('getCurrentUrl');
     statusDiv = document.getElementById('status');
     ingredientList = document.getElementById('ingredientList');
-    storeSelect = document.getElementById('storeSelect');
     recipeTitle = document.getElementById('recipeTitle');
     noRecipe = document.getElementById('noRecipe');
     urlInputGroup = document.getElementById('urlInputGroup');
+    storeModal = document.getElementById('storeModal');
+    changeStoreBtn = document.getElementById('changeStoreBtn');
+    closeModalBtn = document.getElementById('closeModalBtn');
+    selectedStoreLogo = document.getElementById('selectedStoreLogo');
+    selectedStoreName = document.getElementById('selectedStoreName');
 
     // Load saved store preference
     chrome.storage.local.get(['preferredStore'], (result) => {
         if (result.preferredStore) {
-            storeSelect.value = result.preferredStore;
+            selectedStore = result.preferredStore;
+            updateStoreCard();
         }
     });
 
-    // Save store preference on change
-    storeSelect.addEventListener('change', () => {
-        chrome.storage.local.set({ preferredStore: storeSelect.value });
+    // Modal event listeners
+    if (changeStoreBtn) {
+        changeStoreBtn.addEventListener('click', openStoreModal);
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeStoreModal);
+    }
+
+    // Click outside modal to close
+    if (storeModal) {
+        storeModal.addEventListener('click', (e) => {
+            if (e.target === storeModal) {
+                closeStoreModal();
+            }
+        });
+    }
+
+    // Store option click handlers
+    document.querySelectorAll('.store-option').forEach(option => {
+        option.addEventListener('click', function () {
+            const store = this.dataset.store;
+            selectStore(store);
+            closeStoreModal();
+        });
     });
 
     // Add event listeners
@@ -61,9 +115,41 @@ document.addEventListener('DOMContentLoaded', () => {
     autoParseCurrentPage();
 });
 
-/**
- * Auto-parse the current page when extension opens
- */
+function openStoreModal() {
+    if (storeModal) {
+        storeModal.classList.remove('hidden');
+        updateStoreOptions();
+    }
+}
+
+function closeStoreModal() {
+    if (storeModal) {
+        storeModal.classList.add('hidden');
+    }
+}
+
+function selectStore(store) {
+    selectedStore = store;
+    updateStoreCard();
+    updateStoreOptions();
+    chrome.storage.local.set({ preferredStore: store });
+}
+
+function updateStoreCard() {
+    const storeConfig = STORES[selectedStore];
+    if (selectedStoreLogo && selectedStoreName && storeConfig) {
+        selectedStoreLogo.src = storeConfig.logo;
+        selectedStoreName.textContent = storeConfig.name;
+    }
+}
+
+function updateStoreOptions() {
+    document.querySelectorAll('.store-option').forEach(option => {
+        const isSelected = option.dataset.store === selectedStore;
+        option.classList.toggle('selected', isSelected);
+    });
+}
+
 async function autoParseCurrentPage() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -72,10 +158,17 @@ async function autoParseCurrentPage() {
             return;
         }
 
-        // Show loading state
+        const cached = tabRecipeCache.get(tab.id);
+        if (cached && cached.url === tab.url) {
+            currentIngredients = cached.ingredients;
+            currentRecipeTitle = cached.title;
+            displayIngredients(cached.ingredients, cached.title);
+            recipeUrlInput.value = tab.url;
+            return;
+        }
+
         showLoadingState();
 
-        // Try to parse the current page
         const response = await fetch(`${API_BASE_URL}/parse-recipe`, {
             method: 'POST',
             headers: {
@@ -86,6 +179,7 @@ async function autoParseCurrentPage() {
 
         if (!response.ok) {
             showNoRecipe();
+            tabRecipeCache.delete(tab.id);
             return;
         }
 
@@ -95,14 +189,20 @@ async function autoParseCurrentPage() {
 
         if (!ingredients || ingredients.length === 0) {
             showNoRecipe();
+            tabRecipeCache.delete(tab.id);
             return;
         }
 
-        // Success! Show ingredients
         currentIngredients = ingredients;
         currentRecipeTitle = title;
         displayIngredients(ingredients, title);
         recipeUrlInput.value = tab.url;
+
+        tabRecipeCache.set(tab.id, {
+            url: tab.url,
+            ingredients: ingredients,
+            title: title
+        });
 
     } catch (error) {
         console.error('Auto-parse error:', error);
@@ -110,18 +210,12 @@ async function autoParseCurrentPage() {
     }
 }
 
-/**
- * Show loading state in ingredient section
- */
 function showLoadingState() {
     recipeTitle.classList.add('hidden');
     noRecipe.classList.add('hidden');
     ingredientList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">🔍 Looking for recipe...</div>';
 }
 
-/**
- * Show "no recipe found" message
- */
 function showNoRecipe() {
     recipeTitle.classList.add('hidden');
     ingredientList.innerHTML = '';
@@ -130,14 +224,9 @@ function showNoRecipe() {
     currentRecipeTitle = '';
 }
 
-/**
- * Display ingredients in clean bullet format
- */
 function displayIngredients(ingredients, title) {
-    // Hide "no recipe" message
     noRecipe.classList.add('hidden');
 
-    // Show and set recipe title
     if (title) {
         recipeTitle.textContent = title;
         recipeTitle.classList.remove('hidden');
@@ -145,7 +234,6 @@ function displayIngredients(ingredients, title) {
         recipeTitle.classList.add('hidden');
     }
 
-    // Clear and populate ingredient list
     ingredientList.innerHTML = '';
 
     ingredients.forEach(ing => {
@@ -160,16 +248,10 @@ function displayIngredients(ingredients, title) {
     });
 }
 
-/**
- * Show URL input group
- */
 function showUrlInput() {
     urlInputGroup.classList.add('show');
 }
 
-/**
- * Handle "Current Page" button click
- */
 async function handleGetCurrentUrl() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -183,17 +265,12 @@ async function handleGetCurrentUrl() {
     }
 }
 
-/**
- * Handle "Add to Cart" button click
- */
 async function handleAddToCart() {
-    // If we already have ingredients, just submit them
     if (currentIngredients && currentIngredients.length > 0) {
         submitToStore();
         return;
     }
 
-    // Otherwise, try to parse from URL input
     const url = recipeUrlInput.value.trim();
 
     if (!url) {
@@ -202,7 +279,6 @@ async function handleAddToCart() {
         return;
     }
 
-    // Validate URL
     try {
         new URL(url);
     } catch (error) {
@@ -210,13 +286,11 @@ async function handleAddToCart() {
         return;
     }
 
-    // Disable button and show loading
     addToCartBtn.disabled = true;
     addToCartBtn.textContent = 'Parsing Recipe...';
     showLoadingState();
 
     try {
-        // Call backend API to parse recipe
         const response = await fetch(`${API_BASE_URL}/parse-recipe`, {
             method: 'POST',
             headers: {
@@ -238,12 +312,10 @@ async function handleAddToCart() {
             throw new Error('No ingredients found in recipe');
         }
 
-        // Store and display ingredients
         currentIngredients = ingredients;
         currentRecipeTitle = title;
         displayIngredients(ingredients, title);
 
-        // Submit to store
         submitToStore();
 
     } catch (error) {
@@ -255,30 +327,21 @@ async function handleAddToCart() {
     }
 }
 
-/**
- * Submit current ingredients to selected store
- */
 function submitToStore() {
     if (!currentIngredients || currentIngredients.length === 0) {
         showStatus('No ingredients to add', 'error');
         return;
     }
 
-    // Get selected store
-    const selectedStore = storeSelect.value;
     const storeName = selectedStore === 'wholefoods' ? 'Whole Foods' : 'Amazon Fresh';
 
-    // Submit to AFX
     showStatus(`Sending ${currentIngredients.length} ingredients to ${storeName}...`, 'success');
 
-    // Use the AFX submitter
     window.submitToAFX(currentIngredients, selectedStore, currentRecipeTitle);
 
-    // Update button
     addToCartBtn.textContent = `✓ Sent to ${storeName}!`;
     addToCartBtn.disabled = true;
 
-    // Reset after delay
     setTimeout(() => {
         addToCartBtn.disabled = false;
         addToCartBtn.textContent = 'Add to Cart';
@@ -286,9 +349,6 @@ function submitToStore() {
     }, 3000);
 }
 
-/**
- * Show status message
- */
 function showStatus(message, type) {
     statusDiv.className = `status ${type}`;
 
@@ -301,9 +361,6 @@ function showStatus(message, type) {
     statusDiv.classList.remove('hidden');
 }
 
-/**
- * Hide status message
- */
 function hideStatus() {
     statusDiv.classList.add('hidden');
 }
