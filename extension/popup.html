@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Recipe to Whole Foods</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Recipe to Whole Foods</h1>
+            <p class="subtitle">Add ingredients to your cart instantly</p>
+        </div>
+
+        <div class="content">
+            <div class="store-selector">
+                <label for="storeSelect">Store:</label>
+                <select id="storeSelect">
+                    <option value="wholefoods">🥬 Whole Foods Market</option>
+                    <option value="amazonfresh">🛒 Amazon Fresh</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="recipeUrl">Recipe URL:</label>
+                <input type="text" id="recipeUrl" placeholder="https://example.com/recipe" autocomplete="off">
+                <button id="getCurrentUrl" class="secondary-btn" title="Use current page URL">
+                    📋 Current Page
+                </button>
+            </div>
+
+            <button id="addToCart" class="primary-btn">
+                Add to Whole Foods Cart
+            </button>
+
+            <div id="status" class="status hidden"></div>
+
+            <div id="ingredientPreview" class="ingredient-preview hidden">
+                <h3>Found Ingredients:</h3>
+                <div id="ingredientList"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p class="info">Powered by Amazon AFX API</p>
+        </div>
+    </div>
+
+    <script src="afx_submitter.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>

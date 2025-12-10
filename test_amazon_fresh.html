@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Test Amazon Fresh vs Whole Foods AFX</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .button-group {
+            margin: 30px 0;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: white;
+        }
+
+        .wholefoods {
+            background: #00674f;
+        }
+
+        .amazonfresh {
+            background: #FF9900;
+        }
+
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧪 Test Amazon Fresh vs Whole Foods AFX</h1>
+
+    <div class="info">
+        <p><strong>Purpose:</strong> Verify which brand ID works for Amazon Fresh</p>
+        <p><strong>Test Ingredients:</strong> butter, onion, garlic</p>
+        <p><strong>Expected:</strong> Each button should open Amazon with ingredients, but different storefronts</p>
+    </div>
+
+    <div class="button-group">
+        <h2>Known Working:</h2>
+        <button class="wholefoods" onclick="testWholeFoods()">
+            🥬 Test Whole Foods<br>
+            <small>Brand ID: VUZHIFdob2xlIEZvb2Rz</small>
+        </button>
+    </div>
+
+    <div class="button-group">
+        <h2>Testing Amazon Fresh:</h2>
+        <button class="amazonfresh" onclick="testAmazonFresh1()">
+            🛒 Test #1: Base64 "Amazon Fresh"<br>
+            <small>Brand ID: QW1hem9uIEZyZXNo</small>
+        </button>
+
+        <button class="amazonfresh" onclick="testAmazonFresh2()">
+            🛒 Test #2: Plain Text<br>
+            <small>Brand: "Amazon Fresh"</small>
+        </button>
+
+        <button class="amazonfresh" onclick="testAmazonFresh3()">
+            🛒 Test #3: Empty Brand ID<br>
+            <small>Brand ID: (empty)</small>
+        </button>
+
+        <button class="amazonfresh" onclick="testAmazonFresh4()">
+            🛒 Test #4: "Fresh"<br>
+            <small>Brand: "Fresh"</small>
+        </button>
+    </div>
+
+    <div class="info">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Click each button one at a time</li>
+            <li>Note which storefront opens (Whole Foods or Amazon Fresh)</li>
+            <li>Check if ingredients appear correctly</li>
+            <li>Document which brand ID works for Amazon Fresh</li>
+        </ol>
+    </div>
+
+    <script>
+        const TEST_INGREDIENTS = {
+            ingredients: [
+                { name: "butter", quantityList: [{ unit: "COUNT", amount: 1 }] },
+                { name: "onion", quantityList: [{ unit: "COUNT", amount: 1 }] },
+                { name: "garlic", quantityList: [{ unit: "COUNT", amount: 1 }] }
+            ]
+        };
+
+        function submitToStore(brandName, brandId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'https://www.amazon.com/afx/ingredients/landing';
+            form.target = '_blank';
+
+            const ingredientsInput = document.createElement('input');
+            ingredientsInput.type = 'hidden';
+            ingredientsInput.name = 'ingredients';
+            ingredientsInput.value = JSON.stringify(TEST_INGREDIENTS);
+            form.appendChild(ingredientsInput);
+
+            const brandInput = document.createElement('input');
+            brandInput.type = 'hidden';
+            brandInput.name = 'brand';
+            brandInput.value = brandName;
+            form.appendChild(brandInput);
+
+            if (brandId !== null) {
+                const brandIdInput = document.createElement('input');
+                brandIdInput.type = 'hidden';
+                brandIdInput.name = 'almBrandId';
+                brandIdInput.value = brandId;
+                form.appendChild(brandIdInput);
+            }
+
+            document.body.appendChild(form);
+            console.log('Submitting with:', { brand: brandName, brandId: brandId });
+            form.submit();
+            setTimeout(() => document.body.removeChild(form), 100);
+        }
+
+        function testWholeFoods() {
+            console.log('Testing Whole Foods (known working)');
+            submitToStore('Whole Foods', 'VUZHIFdob2xlIEZvb2Rz');
+        }
+
+        function testAmazonFresh1() {
+            console.log('Testing Amazon Fresh - Base64 encoded');
+            submitToStore('Amazon Fresh', 'QW1hem9uIEZyZXNo');
+        }
+
+        function testAmazonFresh2() {
+            console.log('Testing Amazon Fresh - Plain text brand');
+            submitToStore('Amazon Fresh', 'Amazon Fresh');
+        }
+
+        function testAmazonFresh3() {
+            console.log('Testing Amazon Fresh - Empty brand ID');
+            submitToStore('Amazon Fresh', '');
+        }
+
+        function testAmazonFresh4() {
+            console.log('Testing Amazon Fresh - Just "Fresh"');
+            submitToStore('Fresh', 'RnJlc2g='); // Base64 for "Fresh"
+        }
+    </script>
+</body>
+
+</html>

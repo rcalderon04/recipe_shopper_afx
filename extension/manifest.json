@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "Recipe to Whole Foods (AFX)",
+    "version": "2.0.0",
+    "description": "Instantly add recipe ingredients to your Whole Foods cart using Amazon's AFX API",
+    "permissions": [
+        "activeTab",
+        "storage"
+    ],
+    "host_permissions": [
+        "*://*.amazon.com/*",
+        "http://localhost:5000/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Add Recipe to Whole Foods"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    }
+}
