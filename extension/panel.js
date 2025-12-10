@@ -1,5 +1,5 @@
 // Configuration
-const API_BASE_URL = 'http://localhost:5000';
+// No backend needed - all parsing done in JavaScript!
 
 // DOM elements
 let recipeUrlInput;
@@ -150,6 +150,25 @@ function updateStoreOptions() {
     });
 }
 
+/**
+ * Gets the HTML content of a tab via script injection
+ * This bypasses CORS restrictions
+ */
+async function getTabHtml(tabId) {
+    try {
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            func: () => document.documentElement.outerHTML
+        });
+        if (results && results[0]) {
+            return results[0].result;
+        }
+    } catch (e) {
+        console.error('Script injection failed:', e);
+    }
+    return null;
+}
+
 async function autoParseCurrentPage() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -169,29 +188,30 @@ async function autoParseCurrentPage() {
 
         showLoadingState();
 
-        const response = await fetch(`${API_BASE_URL}/parse-recipe`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url: tab.url })
-        });
+        // Get HTML via script injection (bypasses CORS)
+        const html = await getTabHtml(tab.id);
 
-        if (!response.ok) {
+        if (!html) {
+            console.log('Failed to retrieve HTML from tab');
+            showNoRecipe();
+            return;
+        }
+
+        // Use JavaScript parser
+        const parser = new RecipeParser();
+        const data = await parser.parse(html);
+
+        const rawIngredients = data.ingredients;
+        const title = data.title;
+
+        if (!rawIngredients || rawIngredients.length === 0) {
             showNoRecipe();
             tabRecipeCache.delete(tab.id);
             return;
         }
 
-        const data = await response.json();
-        const ingredients = data.ingredients;
-        const title = data.recipe_title;
-
-        if (!ingredients || ingredients.length === 0) {
-            showNoRecipe();
-            tabRecipeCache.delete(tab.id);
-            return;
-        }
+        // Convert raw ingredients to AFX format
+        const ingredients = rawIngredients.map(ing => parseIngredientForAFX(ing));
 
         currentIngredients = ingredients;
         currentRecipeTitle = title;
@@ -291,31 +311,50 @@ async function handleAddToCart() {
     showLoadingState();
 
     try {
-        const response = await fetch(`${API_BASE_URL}/parse-recipe`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url: url })
-        });
+        let html;
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to parse recipe');
+        // If URL matches active tab, leverage injection
+        if (tab && tab.url === url) {
+            html = await getTabHtml(tab.id);
+        } else {
+            // Otherwise try fetch (might fail CORS)
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    html = await response.text();
+                } else {
+                    throw new Error('Failed to fetch URL');
+                }
+            } catch (e) {
+                throw new Error('Cannot parse external URL. Please navigate to the page.');
+            }
         }
 
-        const data = await response.json();
-        const ingredients = data.ingredients;
-        const title = data.recipe_title;
+        if (!html) {
+            throw new Error('Failed to retrieve page content');
+        }
 
-        if (!ingredients || ingredients.length === 0) {
+        // Use JavaScript parser
+        const parser = new RecipeParser();
+        const data = await parser.parse(html);
+
+        const rawIngredients = data.ingredients;
+        const title = data.title;
+
+        if (!rawIngredients || rawIngredients.length === 0) {
             throw new Error('No ingredients found in recipe');
         }
 
+        // Convert raw ingredients to AFX format
+        const ingredients = rawIngredients.map(ing => parseIngredientForAFX(ing));
+
+        // Store and display ingredients
         currentIngredients = ingredients;
         currentRecipeTitle = title;
         displayIngredients(ingredients, title);
 
+        // Submit to store
         submitToStore();
 
     } catch (error) {

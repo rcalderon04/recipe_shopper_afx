@@ -1,16 +1,16 @@
 {
     "manifest_version": 3,
-    "name": "Recipe to Whole Foods (AFX)",
+    "name": "Recipe to Shopping List",
     "version": "2.0.0",
     "description": "Instantly add recipe ingredients to your cart using Amazon's AFX API",
     "permissions": [
         "activeTab",
         "storage",
-        "sidePanel"
+        "sidePanel",
+        "scripting"
     ],
     "host_permissions": [
-        "*://*.amazon.com/*",
-        "http://localhost:5000/*"
+        "*://*.amazon.com/*"
     ],
     "action": {
         "default_title": "Open Recipe Panel"
