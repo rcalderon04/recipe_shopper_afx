@@ -9,9 +9,7 @@
         "sidePanel",
         "scripting"
     ],
-    "host_permissions": [
-        "*://*.amazon.com/*"
-    ],
+    "host_permissions": [],
     "action": {
         "default_title": "Open Recipe Panel"
     },
